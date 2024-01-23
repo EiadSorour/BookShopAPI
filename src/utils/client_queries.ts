@@ -1,29 +1,33 @@
 import db_client from "../db/db_client";
+import Client from "../interfaces/client_interface";
 
-const getClient = async(clientID:number)=>{
-    return await db_client.query(`SELECT * FROM client WHERE id = ${clientID};`);
+class ClientQueries{
+    
+    constructor(){}
+
+    public async getClient(clientID:number): Promise<Client>{
+        const client:Client = (await db_client.query(`SELECT * FROM client WHERE id = ${clientID};`)).rows[0];
+        return client;
+    }
+
+    public async getAllClients(): Promise<Client[]>{
+        const clients:Client[] = (await db_client.query("SELECT * FROM client;")).rows;
+        return clients;
+    }
+
+    public async addClient(client:Client): Promise<void>{
+        await db_client.query(`INSERT INTO client (first_name,last_name,money_owned) VALUES ('${client.first_name}','${client.last_name}',${client.money_owned});`);
+    }
+
+    public async updateClient(client:Client): Promise<Client>{
+        await db_client.query(`UPDATE client SET first_name = '${client.first_name}', last_name='${client.last_name}', money_owned=${client.money_owned}, total_books_bought=${client.total_books_bought} WHERE id = ${client.id};`);
+        const updatedClient:Client = await this.getClient(client.id as number);
+        return updatedClient;
+    }
+
+    public async deleteClient(clientID:number): Promise<void>{
+        await db_client.query(`DELETE FROM client WHERE id = ${clientID};`);
+    }
 }
 
-const getAllClients = async ()=>{
-    return await db_client.query("SELECT * FROM client;");
-}
-
-const insertIntoClient = async (firstName:string, lastName:string, moneyOwned:number)=>{
-    return await db_client.query(`INSERT INTO client (first_name,last_name,money_owned) VALUES ('${firstName}','${lastName}',${moneyOwned});`);
-}
-
-const updateClient = async (clientID:number ,firstName:string, lastName:string, moneyOwned:number, totalBooksBought:number)=>{
-    return await db_client.query(`UPDATE client SET first_name = '${firstName}', last_name='${lastName}', money_owned=${moneyOwned}, total_books_bought=${totalBooksBought} WHERE id = ${clientID};`);
-};
-
-const deleteClient = async (clientID:number) => {
-    return await db_client.query(`DELETE FROM client WHERE id = ${clientID};`);
-}
-
-export default {
-    getClient,
-    getAllClients,
-    insertIntoClient,
-    updateClient,
-    deleteClient
-}
+export default new ClientQueries();

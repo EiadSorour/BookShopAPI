@@ -2,54 +2,54 @@ import {NextFunction, Request,Response} from "express";
 
 import httpStatusText from "../utils/httpStatusText";
 import book_queries from "../utils/book_queries";
+import Book from "../interfaces/book_interface";
 
-const getAllBooks = async function( req:Request ,res:Response , next:NextFunction ){
-    const result = await book_queries.getAllBooks();
-    res.status(200).json({status: httpStatusText.SUCCESS , data:result.rows});
-}
+class BookController{
 
-const getBook = async function( req:Request ,res:Response , next:NextFunction ){
-    const bookID:number = Number(req.params.bookID);
-    const result = await book_queries.getBook(bookID);
-    res.status(200).json({status: httpStatusText.SUCCESS , data:{book:result.rows[0]}});
-}
+    constructor(){}
 
-const updateBook = async function( req:Request ,res:Response , next:NextFunction ){
-    const bookID:number = Number(req.params.bookID);
-    const oldBook = (await book_queries.getBook(bookID)).rows[0];
-
-    const title:string = req.body.title || oldBook.title;
-    const price:number = req.body.price || oldBook.price;
-    let quantityInStock:number = 0;
-    if(!req.body.price && req.body.price != 0){
-        quantityInStock = oldBook.quantityInStock;
-    }else{
-        quantityInStock = req.body.quantityInStock
+    public async getAllBooks(req:Request , res:Response, next: NextFunction): Promise<void>{
+        const allBooks:Book[] = await book_queries.getAllBooks();
+        res.status(200).json({status: httpStatusText.SUCCESS , data:allBooks});
     }
 
-    const result = await book_queries.updateBook(bookID,title,price,quantityInStock);
-    res.status(200).json({status: httpStatusText.SUCCESS , data:result.rows});
+    public async getBook (req:Request , res:Response, next: NextFunction): Promise<void>{
+        const bookID:number = Number(req.params.bookID);
+        const book:Book = await book_queries.getBook(bookID);
+        res.status(200).json({status: httpStatusText.SUCCESS , data:{book}});
+    }
+
+    public async updateBook(req:Request , res:Response, next: NextFunction): Promise<void>{
+        const bookID:number = Number(req.params.bookID);
+        const oldBook:Book = await book_queries.getBook(bookID);
+
+        const updatedBook:Book = {
+            id: bookID,
+            title: req.body.title || oldBook.title,
+            price: (typeof req.body.price == "undefined"? oldBook.price : req.body.price),
+            quantity_in_stock: (typeof req.body.quantity_in_stock == "undefined"? oldBook.quantity_in_stock : req.body.quantity_in_stock)
+        }
+
+        const book:Book = await book_queries.updateBook(updatedBook);
+        res.status(200).json({status: httpStatusText.SUCCESS , data:{book}});
+    }
+
+    public async deleteBook(req:Request , res:Response, next: NextFunction): Promise<void>{
+        const bookID:number = Number(req.params.bookID);
+        await book_queries.deleteBook(bookID);
+        res.status(200).json({status: httpStatusText.SUCCESS , data:{message:"Deleted Successfully"}});
+    }
+
+    public async addBook(req:Request , res:Response, next: NextFunction): Promise<void>{
+        const book:Book = {
+            title: req.body.title,
+            price: req.body.price,
+            quantity_in_stock: req.body.quantity_in_stock,
+        }
+    
+        await book_queries.addBook(book);
+        res.status(201).json({status: httpStatusText.SUCCESS , data:{message:"Created Successfully"}});
+    }
 }
 
-const deleteBook = async function( req:Request ,res:Response , next:NextFunction ){
-    const bookID:number = Number(req.params.bookID);
-    const result = await book_queries.deleteBook(bookID);
-    res.status(200).json({status: httpStatusText.SUCCESS , data:result.rows});
-}
-
-const addBook = async function( req:Request ,res:Response , next:NextFunction ){
-    const title:string = req.body.title;
-    const price:number = req.body.price;
-    const quantityInStock:number = req.body.quantityInStock;
-
-    const result = await book_queries.addBook(title,price,quantityInStock);
-    res.status(200).json({status: httpStatusText.SUCCESS , data:result.rows});
-}
-
-export default {
-    getAllBooks,
-    getBook,
-    updateBook,
-    deleteBook,
-    addBook
-}
+export default new BookController();
