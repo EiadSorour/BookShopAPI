@@ -17,7 +17,7 @@ class BookQueries{
 
     public async updateBook(book:Book): Promise<Book>{
         await db_client.query(`UPDATE book SET title='${book.title}' , price=${book.price} , quantity_in_stock=${book.quantity_in_stock} WHERE id=${book.id};`);
-        const updatedBook:Book = await this.getBook(book.id as number);
+        const updatedBook:Book = await this.getBook(Number(book.id));
         return updatedBook;
     }
 

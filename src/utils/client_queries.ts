@@ -21,7 +21,7 @@ class ClientQueries{
 
     public async updateClient(client:Client): Promise<Client>{
         await db_client.query(`UPDATE client SET first_name = '${client.first_name}', last_name='${client.last_name}', money_owned=${client.money_owned}, total_books_bought=${client.total_books_bought} WHERE id = ${client.id};`);
-        const updatedClient:Client = await this.getClient(client.id as number);
+        const updatedClient:Client = await this.getClient(Number(client.id));
         return updatedClient;
     }
 
