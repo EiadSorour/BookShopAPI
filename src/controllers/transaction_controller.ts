@@ -1,10 +1,8 @@
 import { Request,Response,NextFunction } from "express";
 
-import client_queries from "../utils/client_queries";
-import book_queries from "../utils/book_queries";
+import bookModel from "../models/book_model";
+import clientModel from "../models/client_model";
 import httpStatusText from "../utils/httpStatusText";
-import Client from "../interfaces/client_interface";
-import Book from "../interfaces/book_interface";
 import asyncWrapper from "../middlewares/asyncWrapper";
 import AppError from "../utils/appError";
 
@@ -15,8 +13,12 @@ class TransactionController{
         async (req:Request, res:Response , next:NextFunction)=>{
 
             const bookQuantity:number = Number(req.params.quantity);
-            const current_client:Client = await client_queries.getClient(req.body.clientID);
-            const current_book:Book = await book_queries.getBook(req.body.bookID);
+            const current_client = await clientModel.findOne({where:{id:req.body.clientID}});
+            const current_book= await bookModel.findOne({where:{id:req.body.bookID}});
+
+            console.log(current_client);
+            console.log(current_book);
+            
 
             if(!current_client){
                 const error = new AppError(httpStatusText.FAIL , 400, "This client doesn't exist");
@@ -24,22 +26,22 @@ class TransactionController{
             }else if(!current_book){
                 const error = new AppError(httpStatusText.FAIL , 400, "This book doesn't exist");
                 return next(error);
-            }else if(current_client.money_owned < current_book.price*bookQuantity){
+            }else if(current_client.dataValues.money_owned < current_book.dataValues.price*bookQuantity){
                 const error = new AppError(httpStatusText.FAIL , 400, "Client doesn't have enough money to make this transaction");
                 return next(error);
-            }else if(current_book.quantity_in_stock < bookQuantity){
+            }else if(current_book.dataValues.quantity_in_stock < bookQuantity){
                 const error = new AppError(httpStatusText.FAIL , 400, "Book doesn't have enough copies");
                 return next(error);
             }
         
-            current_client.money_owned -= current_book.price*bookQuantity;
-            current_book.quantity_in_stock -= bookQuantity;
-            current_client.total_books_bought = Number(current_client.total_books_bought) +bookQuantity;
+            current_client.dataValues.money_owned -= current_book.dataValues.price*bookQuantity;
+            current_book.dataValues.quantity_in_stock -= bookQuantity;
+            current_client.dataValues.total_books_bought = Number(current_client.dataValues.total_books_bought) +bookQuantity;
             
-            await client_queries.updateClient(current_client);
-            await book_queries.updateBook(current_book);
+            await clientModel.update(current_client.dataValues , {where: {id:req.body.clientID}});
+            await bookModel.update(current_book.dataValues , {where: {id:req.body.bookID}});
 
-            const responseMessage:string = `Client ${current_client.first_name} ${current_client.last_name} bought ${bookQuantity} copies of book ${current_book.title}`; 
+            const responseMessage:string = `Client ${current_client.dataValues.first_name} ${current_client.dataValues.last_name} bought ${bookQuantity} copies of book ${current_book.dataValues.title}`; 
             return res.status(200).json({status: httpStatusText.SUCCESS , data:{message:responseMessage}});
         }
     )

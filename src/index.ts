@@ -6,18 +6,21 @@ dotenv.config();
 import clientRouter from "./routes/client_router";
 import bookRouter from "./routes/book_router";
 import transactionRouter from "./routes/transaction_router";
-import db_client from "./db/db_client";
+import sequelize from "./models/sequelize";
 import httpStatusText from "./utils/httpStatusText";
 import AppError from "./utils/appError";
 
 const app:express.Application = express();
 const port:number|string = process.env.PORT || 5000;
 
-db_client.connect().then(()=>{
-    console.log("Connected to BookShop database");
-}).catch((error:Error)=>{
+sequelize.authenticate().then(()=>{
+    console.log("Connected to BookShop database successfully");
+}).catch((error)=>{
     console.log(error);
 });
+sequelize.sync().then(()=>{
+    console.log("All models are created");
+})
 
 app.use(express.json())
 app.use(cors());
