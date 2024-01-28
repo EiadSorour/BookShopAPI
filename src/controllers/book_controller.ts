@@ -47,6 +47,14 @@ class BookController{
     public deleteBook = asyncWrapper(
         async (req:Request , res:Response, next: NextFunction)=>{
             const bookID:number = Number(req.params.bookID);
+            
+            const currentBook = await bookModel.findOne({ where:{id: bookID} });
+
+            if(!currentBook){
+                const error = new AppError(httpStatusText.FAIL, 400, "This book doesn't exist");
+                return next(error);
+            }
+            
             await bookModel.destroy({where:{id:bookID}});
             return res.status(200).json({status: httpStatusText.SUCCESS , data:{message:"Deleted Successfully"}});
         }

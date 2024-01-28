@@ -59,6 +59,13 @@ class ClientController{
     public deleteClient = asyncWrapper(
         async (req:Request , res:Response , next:NextFunction)=>{
             const clientID:number = Number(req.params.clientID);
+            const currentClient = await clientModel.findOne({ where:{id: clientID} });
+
+            if(!currentClient){
+                const error = new AppError(httpStatusText.FAIL, 400, "This client doesn't exist");
+                return next(error);
+            }
+
             await clientModel.destroy({where: {id:clientID}});
             return res.status(200).json({status: httpStatusText.SUCCESS , data: {message: "Deleted Successfully"} });
         }

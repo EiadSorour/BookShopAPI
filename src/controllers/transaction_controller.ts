@@ -2,6 +2,8 @@ import { Request,Response,NextFunction } from "express";
 
 import bookModel from "../models/book_model";
 import clientModel from "../models/client_model";
+import orderModel from "../models/order_model";
+import Order from "../interfaces/order_interface";
 import httpStatusText from "../utils/httpStatusText";
 import asyncWrapper from "../middlewares/asyncWrapper";
 import AppError from "../utils/appError";
@@ -14,7 +16,7 @@ class TransactionController{
 
             const bookQuantity:number = Number(req.params.quantity);
             const current_client = await clientModel.findOne({where:{id:req.body.clientID}});
-            const current_book= await bookModel.findOne({where:{id:req.body.bookID}});
+            const current_book = await bookModel.findOne({where:{id:req.body.bookID}});
 
             console.log(current_client);
             console.log(current_book);
@@ -38,6 +40,13 @@ class TransactionController{
             current_book.dataValues.quantity_in_stock -= bookQuantity;
             current_client.dataValues.total_books_bought = Number(current_client.dataValues.total_books_bought) +bookQuantity;
             
+            const order:Order = {
+                quantity:bookQuantity,
+                clientId: (current_client as any).id,
+                bookId: (current_book as any).id
+            }
+            await orderModel.create(order as any);
+
             await clientModel.update(current_client.dataValues , {where: {id:req.body.clientID}});
             await bookModel.update(current_book.dataValues , {where: {id:req.body.bookID}});
 
